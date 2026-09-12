@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>合租生活管家 · Roommate Hub</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  :root{
+    --primary:#4f6df5; --primary-dark:#3a54d6; --bg:#f4f6fb; --card:#fff;
+    --text:#1f2937; --muted:#6b7280; --green:#10b981; --red:#ef4444; --amber:#f59e0b;
+  }
+  body{
+    font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg); color:var(--text); line-height:1.6; padding-bottom:40px;
+  }
+  header{
+    background:linear-gradient(135deg,#4f6df5,#7c3aed); color:#fff;
+    padding:26px 20px 20px; box-shadow:0 4px 20px rgba(79,109,245,.25);
+  }
+  header h1{ font-size:22px; font-weight:700; }
+  header p{ font-size:13px; opacity:.9; margin-top:4px; }
+  .tabs{ display:flex; gap:8px; overflow-x:auto; padding:14px 20px 0; background:#fff;
+    box-shadow:0 2px 10px rgba(0,0,0,.04); position:sticky; top:0; z-index:10; }
+  .tab{ flex:none; padding:10px 16px; border:none; background:transparent; font-size:14px;
+    color:var(--muted); border-bottom:3px solid transparent; cursor:pointer; font-weight:600; }
+  .tab.active{ color:var(--primary); border-bottom-color:var(--primary); }
+  main{ max-width:760px; margin:0 auto; padding:18px 16px; }
+  .panel{ display:none; }
+  .panel.active{ display:block; }
+  .card{ background:var(--card); border-radius:14px; padding:16px; margin-bottom:14px;
+    box-shadow:0 2px 12px rgba(0,0,0,.05); }
+  .card h2{ font-size:16px; margin-bottom:12px; display:flex; align-items:center; gap:6px; }
+  label{ font-size:13px; color:var(--muted); display:block; margin-bottom:4px; }
+  input,select{ width:100%; padding:9px 11px; border:1px solid #e5e7eb; border-radius:9px;
+    font-size:14px; outline:none; background:#fafbfe; }
+  input:focus,select:focus{ border-color:var(--primary); background:#fff; }
+  .row{ display:flex; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
+  .row > div{ flex:1; min-width:130px; }
+  .btn{ padding:9px 16px; border:none; border-radius:9px; background:var(--primary); color:#fff;
+    font-size:14px; font-weight:600; cursor:pointer; }
+  .btn:hover{ background:var(--primary-dark); }
+  .btn.ghost{ background:#eef1fb; color:var(--primary); }
+  .btn.sm{ padding:5px 11px; font-size:13px; }
+  .btn.danger{ background:#fdecec; color:var(--red); }
+  ul.list{ list-style:none; }
+  ul.list li{ display:flex; justify-content:space-between; align-items:center; gap:10px;
+    padding:10px 0; border-bottom:1px solid #f1f3f8; font-size:14px; }
+  ul.list li:last-child{ border-bottom:none; }
+  .muted{ color:var(--muted); font-size:12.5px; }
+  .tag{ display:inline-block; padding:2px 8px; border-radius:20px; font-size:12px;
+    background:#eef1fb; color:var(--primary); margin-left:6px; }
+  .tag.warn{ background:#fef3e2; color:var(--amber); }
+  .tag.ok{ background:#e7f8f1; color:var(--green); }
+  .tag.bad{ background:#fdecec; color:var(--red); }
+  .chk{ display:flex; flex-wrap:wrap; gap:8px; }
+  .chk label{ display:flex; align-items:center; gap:5px; padding:6px 11px; border:1px solid #e5e7eb;
+    border-radius:20px; margin:0; font-size:13px; color:var(--text); cursor:pointer; background:#fafbfe; }
+  .chk input{ width:auto; }
+  .chk label.on{ border-color:var(--primary); background:#eef1fb; color:var(--primary); }
+  .stat{ display:flex; gap:10px; flex-wrap:wrap; }
+  .stat .box{ flex:1; min-width:120px; background:#f8f9fe; border-radius:12px; padding:12px; text-align:center; }
+  .stat .box b{ display:block; font-size:20px; color:var(--primary); }
+  .stat .box span{ font-size:12px; color:var(--muted); }
+  table{ width:100%; border-collapse:collapse; font-size:13.5px; }
+  th,td{ padding:9px 6px; text-align:left; border-bottom:1px solid #f1f3f8; }
+  th{ color:var(--muted); font-weight:600; font-size:12.5px; }
+  .empty{ text-align:center; color:var(--muted); font-size:13px; padding:18px 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🏠 合租生活管家</h1>
+  <p>费用分摊 · 值日排班 · 物品登记 · 室友公约，一站式解决合租矛盾</p>
+</header>
+
+<nav class="tabs">
+  <button class="tab active" data-tab="expense">💰 费用分摊</button>
+  <button class="tab" data-tab="duty">🧹 值日排班</button>
+  <button class="tab" data-tab="goods">🧻 公共物品</button>
+  <button class="tab" data-tab="rules">📜 室友公约</button>
+</nav>
+
+<main>
+  <!-- 费用分摊 -->
+  <section class="panel active" id="expense">
+    <div class="card">
+      <h2>👥 室友名单</h2>
+      <div class="row">
+        <div style="flex:3"><input id="roommates" placeholder="用逗号分隔，如：我,小李,阿杰"></div>
+        <div style="flex:0 0 auto"><button class="btn" onclick="saveRoommates()">保存</button></div>
+      </div>
+      <p class="muted" id="rmTip"></p>
+    </div>
+
+    <div class="card">
+      <h2>➕ 记一笔公共费用</h2>
+      <div class="row">
+        <div><label>费用项目</label><input id="exName" placeholder="如：水电费 / 网费"></div>
+        <div style="flex:0 0 110px"><label>金额(元)</label><input id="exAmount" type="number" placeholder="0"></div>
+      </div>
+      <div class="row">
+        <div><label>谁垫付的</label><select id="exPayer"></select></div>
+      </div>
+      <label>参与分摊的人</label>
+      <div class="chk" id="exParts"></div>
+      <div style="margin-top:12px"><button class="btn" onclick="addExpense()">添加费用</button></div>
+    </div>
+
+    <div class="card">
+      <h2>📋 费用记录</h2>
+      <ul class="list" id="exList"></ul>
+    </div>
+
+    <div class="card">
+      <h2>🧮 结算汇总</h2>
+      <div class="stat" id="exStat"></div>
+      <div style="margin-top:14px"><table id="exTable"></table></div>
+      <p class="muted" style="margin-top:10px" id="exSettle"></p>
+    </div>
+  </section>
+
+  <!-- 值日排班 -->
+  <section class="panel" id="duty">
+    <div class="card">
+      <h2>🧹 排班设置</h2>
+      <div class="row">
+        <div><label>开始日期</label><input id="dutyStart" type="date"></div>
+        <div><label>轮换周期</label>
+          <select id="dutyMode"><option value="1">每天轮换</option><option value="7">每周轮换</option></select>
+        </div>
+      </div>
+      <div style="margin-top:6px"><button class="btn" onclick="saveDuty()">生成排班</button></div>
+      <p class="muted">按室友名单顺序轮流值日（清洁公共区域）。</p>
+    </div>
+    <div class="card">
+      <h2>📅 今天谁值日</h2>
+      <div class="stat" id="dutyToday"></div>
+    </div>
+    <div class="card">
+      <h2>🗓 未来 7 天排班</h2>
+      <table id="dutyTable"></table>
+    </div>
+  </section>
+
+  <!-- 公共物品 -->
+  <section class="panel" id="goods">
+    <div class="card">
+      <h2>➕ 登记公共物品</h2>
+      <div class="row">
+        <div><label>物品名称</label><input id="gdName" placeholder="如：抽纸 / 洗洁精"></div>
+        <div style="flex:0 0 90px"><label>当前数量</label><input id="gdQty" type="number" value="1"></div>
+        <div style="flex:0 0 90px"><label>警戒线</label><input id="gdMin" type="number" value="1"></div>
+      </div>
+      <button class="btn" onclick="addGoods()">添加物品</button>
+    </div>
+    <div class="card">
+      <h2>📦 物品清单 <span class="muted" style="font-size:12px;font-weight:400">（低于警戒线自动提醒）</span></h2>
+      <ul class="list" id="gdList"></ul>
+    </div>
+  </section>
+
+  <!-- 室友公约 -->
+  <section class="panel" id="rules">
+    <div class="card">
+      <h2>➕ 添加公约条款</h2>
+      <div class="row">
+        <div style="flex:3"><input id="ruleText" placeholder="如：晚上 11 点后保持安静"></div>
+        <div style="flex:0 0 auto"><button class="btn" onclick="addRule()">添加</button></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>📜 公约列表</h2>
+      <ul class="list" id="ruleList"></ul>
+    </div>
+  </section>
+</main>
+
+<script>
+const KEY='roommate_hub_v1';
+let S = JSON.parse(localStorage.getItem(KEY)||'null') || {
+  roommates:['我','小李','阿杰'], expenses:[], duty:{start:'',mode:'1'},
+  goods:[{id:1,name:'抽纸',qty:3,min:2},{id:2,name:'洗洁精',qty:1,min:1}],
+  rules:['晚上 11 点后保持安静','公共区域轮流打扫，垃圾当天扔','公共物品用完记得补充']
+};
+const save=()=>localStorage.setItem(KEY,JSON.stringify(S));
+const $=id=>document.getElementById(id);
+const uid=()=>Date.now()+Math.floor(Math.random()*1000);
+
+/* ---------- Tab ---------- */
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active'); $(t.dataset.tab).classList.add('active');
+});
+
+/* ---------- 室友 ---------- */
+function saveRoommates(){
+  const v=$('roommates').value.split(/[,，\s]+/).map(s=>s.trim()).filter(Boolean);
+  if(!v.length) return alert('请输入至少一位室友');
+  S.roommates=v; save(); renderAll();
+}
+function renderRoommates(){
+  $('roommates').value=S.roommates.join(',');
+  $('rmTip').textContent='共 '+S.roommates.length+' 位室友：'+S.roommates.join('、');
+  // 垫付人下拉
+  $('exPayer').innerHTML=S.roommates.map(r=>`<option>${r}</option>`).join('');
+  // 参与人勾选
+  $('exParts').innerHTML=S.roommates.map((r,i)=>
+    `<label class="on" onclick="this.classList.toggle('on')"><input type="checkbox" value="${r}" checked>${r}</label>`).join('');
+}
+
+/* ---------- 费用 ---------- */
+function addExpense(){
+  const name=$('exName').value.trim(), amount=parseFloat($('exAmount').value);
+  const payer=$('exPayer').value;
+  const parts=[...$('exParts').querySelectorAll('input:checked')].map(i=>i.value);
+  if(!name) return alert('请填写费用项目');
+  if(!(amount>0)) return alert('请输入正确的金额');
+  if(!parts.length) return alert('请至少选择一个参与分摊的人');
+  S.expenses.push({id:uid(),name,amount,payer,parts,date:new Date().toLocaleDateString('zh-CN')});
+  save(); $('exName').value=''; $('exAmount').value=''; renderExpense();
+}
+function delExpense(id){ S.expenses=S.expenses.filter(e=>e.id!==id); save(); renderExpense(); }
+function renderExpense(){
+  const l=$('exList');
+  if(!S.expenses.length){ l.innerHTML='<div class="empty">还没有费用记录，先记一笔吧～</div>'; }
+  else l.innerHTML=S.expenses.map(e=>`
+    <li><div><b>${e.name}</b> ¥${e.amount.toFixed(2)}
+      <div class="muted">${e.payer} 垫付 · ${e.parts.length}人均摊 · ${e.date}</div></div>
+      <button class="btn sm danger" onclick="delExpense(${e.id})">删除</button></li>`).join('');
+
+  // 结算：每人净额（正=应收，负=应付）
+  const net={}; S.roommates.forEach(r=>net[r]=0);
+  let total=0;
+  S.expenses.forEach(e=>{
+    total+=e.amount;
+    const share=e.amount/e.parts.length;
+    net[e.payer]=(net[e.payer]||0)+e.amount;
+    e.parts.forEach(p=>net[p]=(net[p]||0)-share);
+  });
+  $('exStat').innerHTML=`
+    <div class="box"><b>¥${total.toFixed(2)}</b><span>公共费用总计</span></div>
+    <div class="box"><b>${S.expenses.length}</b><span>费用笔数</span></div>
+    <div class="box"><b>¥${(total/S.roommates.length).toFixed(2)}</b><span>人均消费</span></div>`;
+
+  let rows='<tr><th>室友</th><th>垫付</th><th>应分担</th><th>净额</th></tr>';
+  S.roommates.forEach(r=>{
+    const paid=S.expenses.filter(e=>e.payer===r).reduce((s,e)=>s+e.amount,0);
+    let share=0; S.expenses.forEach(e=>{ if(e.parts.includes(r)) share+=e.amount/e.parts.length; });
+    const v=net[r];
+    const cls=v>0.005?'ok':(v<-0.005?'bad':'');
+    const txt=v>0.005?`应收 ¥${v.toFixed(2)}`:(v<-0.005?`应付 ¥${(-v).toFixed(2)}`:'已结清');
+    rows+=`<tr><td>${r}</td><td>¥${paid.toFixed(2)}</td><td>¥${share.toFixed(2)}</td>
+      <td><span class="tag ${cls}">${txt}</span></td></tr>`;
+  });
+  $('exTable').innerHTML=rows;
+
+  // 转账建议
+  const debtors=Object.entries(net).filter(([,v])=>v<-0.005).map(([k,v])=>[k,-v]).sort((a,b)=>b[1]-a[1]);
+  const creditors=Object.entries(net).filter(([,v])=>v>0.005).map(([k,v])=>[k,v]).sort((a,b)=>b[1]-a[1]);
+  let tips=[], i=0, j=0;
+  while(i<debtors.length && j<creditors.length){
+    const amt=Math.min(debtors[i][1],creditors[j][1]);
+    if(amt>0.01) tips.push(`【${debtors[i][0]}】转给【${creditors[j][0]}】¥${amt.toFixed(2)}`);
+    debtors[i][1]-=amt; creditors[j][1]-=amt;
+    if(debtors[i][1]<=0.005) i++;
+    if(creditors[j][1]<=0.005) j++;
+  }
+  $('exSettle').innerHTML = tips.length? '💡 结算建议：<br>'+tips.join('<br>') : '🎉 大家都已结清，无需转账～';
+}
+
+/* ---------- 值日 ---------- */
+function saveDuty(){
+  S.duty.start=$('dutyStart').value||new Date().toISOString().slice(0,10);
+  S.duty.mode=$('dutyMode').value; save(); renderDuty();
+}
+function renderDuty(){
+  $('dutyStart').value=S.duty.start||new Date().toISOString().slice(0,10);
+  $('dutyMode').value=S.duty.mode;
+  const start=new Date(S.duty.start||new Date().toISOString().slice(0,10));
+  const step=parseInt(S.duty.mode||'1');
+  const today=new Date(); today.setHours(0,0,0,0);
+  const diffDays=Math.round((today-start)/86400000);
+  const idx=Math.floor(diffDays/step);
+  const who=S.roommates[((idx%S.roommates.length)+S.roommates.length)%S.roommates.length];
+  $('dutyToday').innerHTML=`
+    <div class="box"><b>${who}</b><span>今天值日 🧹</span></div>
+    <div class="box"><b>${S.duty.mode==='7'?'每周':'每天'}</b><span>轮换周期</span></div>`;
+  let rows='<tr><th>日期</th><th>值日室友</th></tr>';
+  for(let d=0;d<7;d++){
+    const dt=new Date(today.getTime()+d*86400000);
+    const i2=Math.floor(Math.round((dt-start)/86400000)/step);
+    const w2=S.roommates[((i2%S.roommates.length)+S.roommates.length)%S.roommates.length];
+    rows+=`<tr><td>${dt.toLocaleDateString('zh-CN',{month:'2-digit',day:'2-digit'})}${d===0?'（今天）':''}</td><td>${w2}</td></tr>`;
+  }
+  $('dutyTable').innerHTML=rows;
+}
+
+/* ---------- 公共物品 ---------- */
+function addGoods(){
+  const name=$('gdName').value.trim();
+  if(!name) return alert('请填写物品名称');
+  S.goods.push({id:uid(),name,qty:parseFloat($('gdQty').value)||0,min:parseFloat($('gdMin').value)||1});
+  save(); $('gdName').value=''; renderGoods();
+}
+function chgGoods(id,delta){
+  const g=S.goods.find(x=>x.id===id); if(!g) return;
+  g.qty=Math.max(0,(+g.qty)+delta); save(); renderGoods();
+}
+function delGoods(id){ S.goods=S.goods.filter(g=>g.id!==id); save(); renderGoods(); }
+function renderGoods(){
+  const l=$('gdList');
+  if(!S.goods.length){ l.innerHTML='<div class="empty">还没有登记公共物品～</div>'; return; }
+  l.innerHTML=S.goods.map(g=>{
+    const low=(+g.qty)<=(+g.min);
+    return `<li><div><b>${g.name}</b> <span class="tag ${low?'bad':'ok'}">${low?'⚠ 需补充':'充足'}</span>
+      <div class="muted">当前 ${g.qty} · 警戒线 ${g.min}</div></div>
+      <div>
+        <button class="btn sm ghost" onclick="chgGoods(${g.id},-1)">−1</button>
+        <button class="btn sm ghost" onclick="chgGoods(${g.id},1)">+1</button>
+        <button class="btn sm danger" onclick="delGoods(${g.id})">删</button>
+      </div></li>`;
+  }).join('');
+}
+
+/* ---------- 公约 ---------- */
+function addRule(){
+  const t=$('ruleText').value.trim(); if(!t) return alert('请输入公约内容');
+  S.rules.push(t); save(); $('ruleText').value=''; renderRules();
+}
+function delRule(i){ S.rules.splice(i,1); save(); renderRules(); }
+function renderRules(){
+  const l=$('ruleList');
+  if(!S.rules.length){ l.innerHTML='<div class="empty">还没有公约条款～</div>'; return; }
+  l.innerHTML=S.rules.map((r,i)=>`<li><div>${i+1}. ${r}</div>
+    <button class="btn sm danger" onclick="delRule(${i})">删除</button></li>`).join('');
+}
+
+/* ---------- 渲染 ---------- */
+function renderAll(){ renderRoommates(); renderExpense(); renderDuty(); renderGoods(); renderRules(); }
+renderAll();
+</script>
+</body>
+</html>
