@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#4f6df5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="合租管家">
+<meta name="description" content="合租生活管家：AI 一句话记账、费用 AA 分摊、值日排班、公共物品登记、室友公约。">
+<title>合租生活管家 · Roommate Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   1. 主题变量（浅色 · 科技感蓝紫渐变）
+   ============================================================ */
+:root{
+  --c-primary:#4f6df5;          /* 主色：科技蓝 */
+  --c-accent:#7c3aed;           /* 主色：科技紫 */
+  --c-primary-dark:#3f58d8;
+  --c-primary-soft:#EDF0FE;
+  --c-accent-soft:#F3EBFE;
+  --c-bg:#F5F6FC;
+  --c-card:#FFFFFF;
+  --c-text:#1B2036;
+  --c-muted:#7A81A0;
+  --c-border:#E7E9F5;
+  --c-warn:#F59E0B;  --c-warn-soft:#FEF3E2;
+  --c-danger:#EF4444;--c-danger-soft:#FDECEC;
+  --c-good:#10B981;  --c-good-soft:#E7F8F1;
+  --c-input-bg:#FAFBFE; --c-hover-bg:#FAFBFF; --c-row-border:#F1F3FA;
+  --c-box-1:#F7F8FE;   --c-box-2:#EFF2FE;
+  --c-ghost-hover:#E1E7FD; --c-danger-hover:#FBD9D9; --c-track:#EDF0F9;
+  --radius:18px; --radius-sm:12px;
+  --shadow:0 6px 24px rgba(79,109,245,.09);
+  --shadow-hover:0 16px 40px rgba(79,109,245,.20);
+  --grad:linear-gradient(135deg,#4f6df5 0%,#7c3aed 100%);
+  --t:.28s cubic-bezier(.4,0,.2,1);
+}
+/* 深色模式 */
+[data-theme="dark"]{
+  --c-primary:#7C93FF; --c-accent:#A78BFA;
+  --c-primary-dark:#9BB0FF; --c-primary-soft:#1D2540; --c-accent-soft:#271F42;
+  --c-bg:#0F1322; --c-card:#191E33; --c-text:#E8EBF7; --c-muted:#9399B5; --c-border:#282E48;
+  --c-warn:#FBBF24; --c-warn-soft:#3A2E12; --c-danger:#F87171; --c-danger-soft:#3A1D1D;
+  --c-good:#34D399; --c-good-soft:#123326;
+  --c-input-bg:#141930; --c-hover-bg:#1F2540; --c-row-border:#242A44;
+  --c-box-1:#1C2238; --c-box-2:#171C2F;
+  --c-ghost-hover:#232B49; --c-danger-hover:#4A2323; --c-track:#232A45;
+  --shadow:0 6px 24px rgba(0,0,0,.35);
+  --shadow-hover:0 16px 40px rgba(0,0,0,.5);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{
+  font-family:"Noto Sans SC",-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  background:var(--c-bg); color:var(--c-text); line-height:1.65;
+  padding-bottom:calc(78px + env(safe-area-inset-bottom));  /* 给底部 Tab 留位 */
+  -webkit-font-smoothing:antialiased; transition:background var(--t),color var(--t);
+}
+/* ============================================================
+   2. 加载遮罩（优先级四：部署容错兜底）
+   ============================================================ */
+#loader{
+  position:fixed; inset:0; z-index:999; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:16px;
+  background:linear-gradient(135deg,#4f6df5 0%,#7c3aed 100%);
+  color:#fff; transition:opacity .45s ease, visibility .45s ease;
+}
+#loader.hide{opacity:0; visibility:hidden;}
+#loader .spinner{
+  width:46px; height:46px; border-radius:50%;
+  border:4px solid rgba(255,255,255,.28); border-top-color:#fff;
+  animation:spin .8s linear infinite;
+}
+#loader p{font-size:15px; font-weight:500; letter-spacing:.5px;}
+#loader small{font-size:12px; opacity:.75;}
+@keyframes spin{to{transform:rotate(360deg);}}
+/* ============================================================
+   3. 顶部 Header
+   ============================================================ */
+header{
+  background:var(--grad); color:#fff; position:relative; overflow:hidden;
+  padding:calc(24px + env(safe-area-inset-top)) 20px 24px;
+  border-radius:0 0 26px 26px; box-shadow:0 10px 30px rgba(79,109,245,.28);
+}
+header::after{content:""; position:absolute; right:-40px; top:-50px; width:180px; height:180px;
+  background:rgba(255,255,255,.12); border-radius:50%;}
+header h1{font-size:21px; font-weight:700; display:flex; align-items:center; gap:8px; padding-right:100px;}
+header p{font-size:12.5px; opacity:.92; margin-top:6px; padding-right:100px;}
+.header-actions{position:absolute; top:calc(18px + env(safe-area-inset-top)); right:16px; display:flex; gap:8px; z-index:2;}
+.icon-btn{width:38px; height:38px; border-radius:50%; border:none; background:rgba(255,255,255,.2); color:#fff;
+  font-size:18px; cursor:pointer; display:grid; place-items:center; transition:background var(--t),transform var(--t);}
+.icon-btn:hover{background:rgba(255,255,255,.34); transform:scale(1.08);}
+.icon-btn:active{transform:scale(.94);}
+/* ============================================================
+   4. 概览条（所有 Tab 共享）
+   ============================================================ */
+.overview{max-width:720px; margin:-14px auto 0; padding:0 16px; position:relative; z-index:3;}
+.ov-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:10px;
+  background:var(--c-card); border:1px solid var(--c-border); border-radius:var(--radius);
+  padding:14px 10px; box-shadow:var(--shadow);}
+.ov-item{text-align:center; cursor:pointer; border-radius:var(--radius-sm); padding:4px 2px;
+  transition:transform var(--t),background var(--t);}
+.ov-item:hover{transform:translateY(-3px); background:var(--c-hover-bg);}
+.ov-item b{display:block; font-size:17px; font-weight:700; color:var(--c-primary);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.ov-item.purple b{color:var(--c-accent);}
+.ov-item.warn b{color:var(--c-warn);}
+.ov-item span{font-size:11px; color:var(--c-muted);}
+/* ============================================================
+   5. 视图与卡片
+   ============================================================ */
+main{max-width:720px; margin:0 auto; padding:16px;}
+.view{display:none; animation:fadeUp .36s var(--t) both;}
+.view.active{display:block;}
+@keyframes fadeUp{from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:translateY(0);}}
+.card{background:var(--c-card); border:1px solid var(--c-border); border-radius:var(--radius);
+  padding:18px; margin-bottom:14px; box-shadow:var(--shadow);
+  transition:box-shadow var(--t),transform var(--t),background var(--t);}
+.card:hover{box-shadow:var(--shadow-hover);}
+.card h2{font-size:15.5px; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:7px; flex-wrap:wrap;}
+.section-title{font-size:13.5px; font-weight:500; color:var(--c-muted); margin:0 0 12px; letter-spacing:.4px;}
+/* 表单 */
+label{font-size:12.5px; color:var(--c-muted); display:block; margin-bottom:5px; font-weight:500;}
+input,select,textarea{width:100%; padding:11px 13px; border:1.5px solid var(--c-border); border-radius:var(--radius-sm);
+  font-size:14.5px; font-family:inherit; outline:none; background:var(--c-input-bg); color:var(--c-text); resize:vertical;
+  transition:border-color var(--t),background var(--t),box-shadow var(--t);}
+input:focus,select:focus,textarea:focus{border-color:var(--c-primary); background:var(--c-card);
+  box-shadow:0 0 0 4px rgba(79,109,245,.13);}
+.row{display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap;}
+.row>div{flex:1; min-width:120px;}
+/* 按钮 */
+.btn{padding:11px 20px; border:none; border-radius:var(--radius-sm); background:var(--grad); color:#fff;
+  font-size:14.5px; font-weight:700; font-family:inherit; cursor:pointer;
+  box-shadow:0 6px 16px rgba(79,109,245,.3);
+  transition:transform var(--t),box-shadow var(--t),filter var(--t),background var(--t);}
+.btn:hover{transform:translateY(-2px); box-shadow:0 10px 24px rgba(79,109,245,.38); filter:brightness(1.04);}
+.btn:active{transform:translateY(0) scale(.97);}
+.btn.ghost{background:var(--c-primary-soft); color:var(--c-primary); box-shadow:none;}
+.btn.ghost:hover{background:var(--c-ghost-hover);}
+.btn.sm{padding:6px 13px; font-size:13px; border-radius:10px; box-shadow:none;}
+.btn.danger{background:var(--c-danger-soft); color:var(--c-danger); box-shadow:none;}
+.btn.danger:hover{background:var(--c-danger-hover);}
+.btn.ai{background:linear-gradient(135deg,#7c3aed,#4f6df5); box-shadow:0 6px 16px rgba(124,58,237,.32);}
+.btn.ai:hover{box-shadow:0 10px 24px rgba(124,58,237,.44);}
+.btn-row{display:flex; gap:10px; flex-wrap:wrap;}
+/* 室友 chips */
+.chips{display:flex; flex-wrap:wrap; gap:8px;}
+.chip{display:inline-flex; align-items:center; gap:6px; background:var(--c-primary-soft); color:var(--c-primary);
+  padding:7px 12px; border-radius:20px; font-size:13.5px; font-weight:500; transition:all var(--t);}
+.chip:hover{transform:translateY(-1px);}
+.chip button{border:none; background:rgba(79,109,245,.16); color:var(--c-primary); width:18px; height:18px;
+  border-radius:50%; cursor:pointer; font-size:12px; line-height:1; display:grid; place-items:center; transition:all var(--t);}
+.chip button:hover{background:var(--c-danger); color:#fff;}
+/* 列表 */
+ul.list{list-style:none;}
+ul.list li{display:flex; justify-content:space-between; align-items:center; gap:12px; padding:13px 0;
+  border-bottom:1px solid var(--c-row-border); font-size:14.5px; transition:background var(--t);}
+ul.list li:hover{background:var(--c-hover-bg);}
+ul.list li:last-child{border-bottom:none;}
+.li-actions{display:flex; gap:6px; flex:0 0 auto;}
+.muted{color:var(--c-muted); font-size:12.5px;}
+/* 标签 */
+.tag{display:inline-block; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:500;
+  background:var(--c-primary-soft); color:var(--c-primary); margin-left:6px;}
+.tag.ok{background:var(--c-good-soft); color:var(--c-good);}
+.tag.warn{background:var(--c-warn-soft); color:var(--c-warn);}
+.tag.bad{background:var(--c-danger-soft); color:var(--c-danger);}
+.tag.ai{background:var(--c-accent-soft); color:var(--c-accent);}
+/* 复选 chips */
+.chk{display:flex; flex-wrap:wrap; gap:8px;}
+.chk label{display:flex; align-items:center; gap:6px; padding:8px 14px; border:1.5px solid var(--c-border);
+  border-radius:22px; margin:0; font-size:13.5px; color:var(--c-text); cursor:pointer; background:var(--c-input-bg);
+  transition:all var(--t); font-weight:400;}
+.chk input{width:auto;}
+.chk label.on{border-color:var(--c-primary); background:var(--c-primary-soft); color:var(--c-primary); font-weight:500;}
+/* 统计块 */
+.stat{display:grid; grid-template-columns:repeat(3,1fr); gap:10px;}
+.stat .box{background:linear-gradient(160deg,var(--c-box-1),var(--c-box-2)); border-radius:var(--radius-sm);
+  padding:14px 8px; text-align:center; transition:transform var(--t);}
+.stat .box b{display:block; font-size:19px; color:var(--c-primary); font-weight:700;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.stat .box span{font-size:11.5px; color:var(--c-muted);}
+/* 表格 */
+table{width:100%; border-collapse:collapse; font-size:13.5px;}
+th,td{padding:10px 6px; text-align:left; border-bottom:1px solid var(--c-row-border);}
+th{color:var(--c-muted); font-weight:500; font-size:12.5px;}
+tr.today{background:var(--c-primary-soft);}
+tr.today td{color:var(--c-primary); font-weight:700;}
+tr.today td:first-child::before{content:"● "; color:var(--c-primary);}
+/* 空状态 */
+.empty{text-align:center; color:var(--c-muted); font-size:13.5px; padding:20px 0 6px;}
+.empty .emoji{font-size:34px; display:block; margin-bottom:8px; opacity:.75;}
+/* 提示条 */
+.tip{background:var(--c-primary-soft); border-left:4px solid var(--c-primary); border-radius:10px;
+  padding:12px 14px; font-size:13px; color:var(--c-text); line-height:1.7; margin-top:12px;}
+.tip.good{background:var(--c-good-soft); border-color:var(--c-good);}
+.tip.warn{background:var(--c-warn-soft); border-color:var(--c-warn);}
+/* 费用构成条形图 */
+.bar-row{display:flex; align-items:center; gap:10px; margin-bottom:10px; font-size:13px;}
+.bar-label{flex:0 0 70px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.bar-track{flex:1; height:14px; background:var(--c-track); border-radius:8px; overflow:hidden;}
+.bar-fill{height:100%; border-radius:8px; transition:width .6s var(--t);}
+.bar-val{flex:0 0 auto; color:var(--c-muted); font-size:12px; min-width:92px; text-align:right;}
+/* ============================================================
+   6. AI 记账区（优先级一）
+   ============================================================ */
+.ai-box{border:1.5px dashed var(--c-accent); background:var(--c-accent-soft);}
+.ai-loading{display:flex; align-items:center; gap:8px; color:var(--c-accent); font-size:13.5px; font-weight:500; padding:8px 0;}
+.ai-loading .dot{width:7px; height:7px; border-radius:50%; background:var(--c-accent); animation:blink 1s infinite;}
+.ai-loading .dot:nth-child(2){animation-delay:.2s;}
+.ai-loading .dot:nth-child(3){animation-delay:.4s;}
+@keyframes blink{0%,100%{opacity:.25; transform:scale(.8);} 50%{opacity:1; transform:scale(1.15);}}
+.ai-result{background:var(--c-card); border:1px solid var(--c-accent); border-radius:var(--radius-sm);
+  padding:13px 14px; margin-top:12px; animation:fadeUp .3s var(--t) both;}
+.ai-result .ai-head{display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--c-accent);
+  font-weight:700; margin-bottom:9px;}
+.ai-result .ai-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:7px 10px; font-size:13px;}
+.ai-result .ai-grid b{color:var(--c-primary);}
+.ai-examples{font-size:12px; color:var(--c-muted); margin-top:10px; line-height:1.9;}
+.ai-examples em{font-style:normal; cursor:pointer; color:var(--c-accent); border-bottom:1px dashed var(--c-accent);}
+/* ============================================================
+   7. 值日排班视觉强化（优先级二·3）
+   ============================================================ */
+.duty-hero{background:var(--grad); border-radius:var(--radius); padding:22px 18px; color:#fff;
+  text-align:center; position:relative; overflow:hidden; box-shadow:0 12px 30px rgba(79,109,245,.3);}
+.duty-hero::after{content:""; position:absolute; left:-30px; bottom:-60px; width:160px; height:160px;
+  background:rgba(255,255,255,.1); border-radius:50%;}
+.duty-badge{display:inline-block; background:rgba(255,255,255,.22); color:#fff; font-size:12px; font-weight:700;
+  padding:4px 14px; border-radius:20px; letter-spacing:.5px; animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{transform:scale(1);} 50%{transform:scale(1.06);}}
+.duty-avatar{width:80px; height:80px; margin:14px auto 10px; border-radius:50%; display:grid; place-items:center;
+  background:rgba(255,255,255,.92); color:var(--c-primary); font-size:36px; font-weight:700;
+  box-shadow:0 8px 24px rgba(0,0,0,.18); border:4px solid rgba(255,255,255,.55);}
+.duty-name{font-size:26px; font-weight:700; letter-spacing:1px; position:relative; z-index:1;}
+.duty-sub{font-size:12.5px; opacity:.9; margin-top:4px; position:relative; z-index:1;}
+.duty-progress{margin-top:16px; position:relative; z-index:1;}
+.duty-progress .pg-track{height:10px; border-radius:6px; background:rgba(255,255,255,.28); overflow:hidden;}
+.duty-progress .pg-fill{height:100%; border-radius:6px; background:#fff; transition:width .6s var(--t);}
+.duty-progress .pg-text{font-size:11.5px; opacity:.92; margin-top:6px;}
+.duty-done-row{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:14px;
+  padding:12px 14px; border-radius:var(--radius-sm); background:var(--c-input-bg);
+  border:1px dashed var(--c-border); transition:all var(--t);}
+.duty-done-row.done{background:var(--c-good-soft); border:1px solid var(--c-good);}
+.duty-done-row .dd-text{font-size:13.5px; font-weight:500;}
+.duty-done-row.done .dd-text{color:var(--c-good);}
+/* ============================================================
+   8. 底部 Tab 栏（优先级三·2）
+   ============================================================ */
+.tabbar{position:fixed; left:0; right:0; bottom:0; z-index:60;
+  display:grid; grid-template-columns:repeat(4,1fr);
+  background:color-mix(in srgb, var(--c-card) 92%, transparent);
+  backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+  border-top:1px solid var(--c-border);
+  padding-bottom:env(safe-area-inset-bottom); transition:background var(--t);}
+.tabbar button{border:none; background:transparent; font-family:inherit; cursor:pointer;
+  display:flex; flex-direction:column; align-items:center; gap:2px; padding:9px 0 8px;
+  color:var(--c-muted); font-size:11px; font-weight:500; position:relative; transition:color var(--t);}
+.tabbar button .ico{font-size:20px; line-height:1; transition:transform var(--t);}
+.tabbar button:hover{color:var(--c-primary);}
+.tabbar button:hover .ico{transform:translateY(-2px) scale(1.1);}
+.tabbar button.active{color:var(--c-primary); font-weight:700;}
+.tabbar button.active .ico{transform:scale(1.12);}
+.tabbar button.active::before{content:""; position:absolute; top:0; left:50%; transform:translateX(-50%);
+  width:26px; height:3px; border-radius:0 0 4px 4px; background:var(--grad);}
+/* ============================================================
+   9. 室友管理弹窗（优先级二·1）
+   ============================================================ */
+.modal{position:fixed; inset:0; z-index:200; display:none; align-items:flex-end; justify-content:center;
+  background:rgba(16,20,38,.5); backdrop-filter:blur(3px);}
+.modal.show{display:flex; animation:fadeIn .2s ease both;}
+@keyframes fadeIn{from{opacity:0;} to{opacity:1;}}
+.modal-panel{background:var(--c-card); width:100%; max-width:560px; border-radius:22px 22px 0 0;
+  padding:22px 20px calc(24px + env(safe-area-inset-bottom)); box-shadow:0 -10px 40px rgba(0,0,0,.25);
+  animation:slideUp .3s var(--t) both; max-height:88vh; overflow-y:auto;}
+@keyframes slideUp{from{transform:translateY(40px); opacity:.6;} to{transform:translateY(0); opacity:1;}}
+.modal-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;}
+.modal-head h3{font-size:17px; font-weight:700;}
+.modal-close{border:none; background:var(--c-input-bg); color:var(--c-muted); width:32px; height:32px;
+  border-radius:50%; font-size:16px; cursor:pointer; transition:all var(--t);}
+.modal-close:hover{background:var(--c-danger-soft); color:var(--c-danger); transform:rotate(90deg);}
+@media (min-width:600px){ .modal{align-items:center;} .modal-panel{border-radius:22px;} }
+/* ============================================================
+   10. Toast
+   ============================================================ */
+#toast{position:fixed; left:50%; bottom:calc(92px + env(safe-area-inset-bottom)); transform:translate(-50%,18px);
+  background:rgba(24,28,48,.95); color:#fff; font-size:13.5px; font-weight:500; padding:11px 20px;
+  border-radius:24px; box-shadow:0 10px 30px rgba(0,0,0,.28); opacity:0; pointer-events:none; z-index:300;
+  max-width:86vw; text-align:center; transition:opacity var(--t),transform var(--t);}
+#toast.show{opacity:1; transform:translate(-50%,0);}
+/* ============================================================
+   11. 移动端适配
+   ============================================================ */
+@media (max-width:560px){
+  header h1{font-size:18.5px; padding-right:96px;}
+  header p{font-size:11.5px; padding-right:96px;}
+  main{padding:14px 13px;}
+  .overview{padding:0 13px;}
+  .card{padding:16px 14px;}
+  .ov-grid{gap:6px; padding:12px 6px;}
+  .ov-item b{font-size:15px;} .ov-item span{font-size:10px;}
+  .stat .box b{font-size:16px;} .stat .box span{font-size:10.5px;}
+  .ai-result .ai-grid{grid-template-columns:1fr;}
+  .bar-label{flex:0 0 56px;} .bar-val{min-width:76px;}
+  .duty-avatar{width:70px; height:70px; font-size:31px;}
+  .duty-name{font-size:23px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ========== 加载遮罩（优先级四） ========== -->
+<div id="loader">
+  <div class="spinner"></div>
+  <p>正在加载合租管家…</p>
+  <small>首次加载稍慢，请稍候</small>
+</div>
+
+<!-- ========== 顶部 Header ========== -->
+<header>
+  <div class="header-actions">
+    <button class="icon-btn" id="roommateBtn" title="室友管理" onclick="openRoommateModal()">👥</button>
+    <button class="icon-btn" id="themeBtn" title="切换深色模式" onclick="toggleTheme()">🌙</button>
+  </div>
+  <h1>🏠 合租生活管家</h1>
+  <p>AI 一句话记账 · 费用分摊 · 值日排班 · 物品登记 · 室友公约</p>
+</header>
+
+<!-- ========== 数据概览（所有 Tab 共享） ========== -->
+<section class="overview">
+  <div class="ov-grid">
+    <div class="ov-item" onclick="switchTab('expense')"><b id="ovMonth">¥0</b><span>本月费用</span></div>
+    <div class="ov-item purple" onclick="switchTab('duty')"><b id="ovDuty">—</b><span>今天值日</span></div>
+    <div class="ov-item warn" onclick="switchTab('goods')"><b id="ovGoods">0</b><span>待补充</span></div>
+    <div class="ov-item" onclick="openRoommateModal()"><b id="ovRooms">0</b><span>室友人数</span></div>
+  </div>
+</section>
+
+<main>
+  <!-- ==================== Tab1：费用分摊 ==================== -->
+  <section class="view active" id="view-expense">
+    <!-- ★ 优先级一：AI 一句话记账 -->
+    <div class="card ai-box">
+      <h2>✨ AI 一句话记账 <span class="tag ai">智能解析</span></h2>
+      <label>像聊天一样描述这笔花费，AI 自动识别金额、垫付人和分摊人数</label>
+      <textarea id="aiInput" rows="2" placeholder="例如：今天买菜花了120块，我垫的，4个人平摊"></textarea>
+      <div style="margin-top:10px" class="btn-row">
+        <button class="btn ai" onclick="runAI()">✨ AI 解析</button>
+        <button class="btn ghost" onclick="clearAI()">清空</button>
+      </div>
+      <div class="ai-examples">
+        试试：
+        <em onclick="useExample(0)">今天买菜花了120块，我垫的，4个人平摊</em> ·
+        <em onclick="useExample(1)">小李交了200电费，三个人分</em> ·
+        <em onclick="useExample(2)">房租4500，阿杰垫付，所有人平摊</em>
+      </div>
+      <div id="aiOut"></div>
+    </div>
+
+    <!-- 手动记账表单（AI 解析后自动填入） -->
+    <div class="card">
+      <h2>➕ 记一笔公共费用</h2>
+      <div class="row">
+        <div><label>费用项目</label><input id="exName" placeholder="如：水电费 / 网费"></div>
+        <div style="flex:0 0 110px"><label>金额(元)</label><input id="exAmount" type="number" placeholder="0"></div>
+      </div>
+      <div class="row"><div><label>谁垫付的</label><select id="exPayer"></select></div></div>
+      <label>参与分摊的人（总金额 ÷ 参与人数）</label>
+      <div class="chk" id="exParts"></div>
+      <div style="margin-top:14px"><button class="btn" onclick="addExpense()">确认添加费用</button></div>
+    </div>
+
+    <!-- 费用记录 -->
+    <div class="card">
+      <h2>📋 费用记录 <span class="muted" style="font-weight:400" id="exCount"></span></h2>
+      <div id="exEmpty"></div>
+      <ul class="list" id="exList"></ul>
+    </div>
+
+    <!-- 费用构成 -->
+    <div class="card">
+      <h2>📊 费用构成</h2>
+      <div id="exChart"></div>
+    </div>
+
+    <!-- 结算汇总 -->
+    <div class="card">
+      <h2>🧮 结算汇总 <span class="muted" style="font-weight:400">（实时更新）</span></h2>
+      <div class="stat" id="exStat"></div>
+      <div style="margin-top:14px; overflow-x:auto"><table id="exTable"></table></div>
+      <div class="tip" id="exSettle"></div>
+      <div style="margin-top:12px"><button class="btn ghost" onclick="copyBill()">📋 复制账单到剪贴板</button></div>
+    </div>
+  </section>
+
+  <!-- ==================== Tab2：值日排班 ==================== -->
+  <section class="view" id="view-duty">
+    <!-- ★ 优先级二·3：今天谁值日 · 视觉强化 -->
+    <div class="card" style="padding:0; overflow:hidden; border:none; background:transparent; box-shadow:none">
+      <div class="duty-hero">
+        <span class="duty-badge">🔥 今天该谁值日</span>
+        <div class="duty-avatar" id="dutyAvatar">?</div>
+        <div class="duty-name" id="dutyName">—</div>
+        <div class="duty-sub" id="dutySub">加载中…</div>
+        <div class="duty-progress">
+          <div class="pg-track"><div class="pg-fill" id="dutyPg" style="width:0%"></div></div>
+          <div class="pg-text" id="dutyPgText">本周清洁进度 0 / 7 天</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="duty-done-row" id="dutyDone">
+        <div class="dd-text" id="dutyDoneText">今日清洁尚未打卡</div>
+        <button class="btn sm" id="dutyDoneBtn" onclick="toggleDutyDone()">标记已完成</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🧹 排班设置</h2>
+      <div class="row">
+        <div><label>开始日期</label><input id="dutyStart" type="date"></div>
+        <div><label>轮换周期</label>
+          <select id="dutyMode"><option value="1">每天轮换</option><option value="7">每周轮换</option></select>
+        </div>
+      </div>
+      <button class="btn" onclick="saveDuty()">生成排班</button>
+      <p class="muted" style="margin-top:10px">按室友名单顺序轮流值日（公共区域清洁）。</p>
+    </div>
+
+    <div class="card">
+      <h2>🗓 未来 7 天排班 <span class="muted" style="font-weight:400">（高亮为今天）</span></h2>
+      <div id="dutyEmpty"></div>
+      <table id="dutyTable"></table>
+    </div>
+  </section>
+
+  <!-- ==================== Tab3：公共物品 ==================== -->
+  <section class="view" id="view-goods">
+    <div class="card">
+      <h2>➕ 登记公共物品</h2>
+      <div class="row">
+        <div><label>物品名称</label><input id="gdName" placeholder="如：抽纸 / 洗洁精"></div>
+        <div style="flex:0 0 88px"><label>数量</label><input id="gdQty" type="number" value="1"></div>
+        <div style="flex:0 0 88px"><label>警戒线</label><input id="gdMin" type="number" value="1"></div>
+      </div>
+      <button class="btn" onclick="addGoods()">添加物品</button>
+    </div>
+    <div class="card">
+      <h2>📦 物品清单 <span class="muted" style="font-weight:400">（低于警戒线自动提醒）</span></h2>
+      <div id="gdEmpty"></div>
+      <ul class="list" id="gdList"></ul>
+    </div>
+  </section>
+
+  <!-- ==================== Tab4：室友公约 ==================== -->
+  <section class="view" id="view-rules">
+    <div class="card">
+      <h2>➕ 添加公约条款</h2>
+      <div class="row">
+        <div style="flex:3"><input id="ruleText" placeholder="如：晚上 11 点后保持安静"></div>
+        <div style="flex:0 0 auto"><button class="btn" onclick="addRule()">添加</button></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>📜 公约列表</h2>
+      <div id="ruleEmpty"></div>
+      <ul class="list" id="ruleList"></ul>
+    </div>
+
+    <!-- 数据管理 -->
+    <div class="card">
+      <h2>🗂 数据管理</h2>
+      <div class="btn-row">
+        <button class="btn ghost" onclick="copyBill()">📋 复制账单</button>
+        <button class="btn ghost" onclick="exportData()">💾 备份数据</button>
+        <button class="btn ghost" onclick="document.getElementById('importFile').click()">📥 恢复备份</button>
+        <button class="btn ghost" onclick="genSampleData()">✨ 生成示例数据</button>
+        <button class="btn danger" onclick="clearAll()">🗑 清空重置</button>
+      </div>
+      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(this)">
+      <p class="muted" style="margin-top:10px">数据保存在本机浏览器；换设备可用「备份 / 恢复」迁移。</p>
+    </div>
+  </section>
+</main>
+
+<!-- ========== 室友管理弹窗（优先级二·1） ========== -->
+<div class="modal" id="roommateModal" onclick="if(event.target===this) closeRoommateModal()">
+  <div class="modal-panel">
+    <div class="modal-head">
+      <h3>👥 室友管理</h3>
+      <button class="modal-close" onclick="closeRoommateModal()">✕</button>
+    </div>
+    <p class="muted" style="margin-bottom:14px">增删室友后，费用分摊与值日排班的选项会**实时更新**。</p>
+    <div class="chips" id="rmChips" style="margin-bottom:14px"></div>
+    <div class="row">
+      <div style="flex:3"><input id="rmInput" placeholder="输入室友名字，回车或点右侧添加"></div>
+      <div style="flex:0 0 auto"><button class="btn" onclick="addRoommate()">添加</button></div>
+    </div>
+    <p class="muted" id="rmTip"></p>
+  </div>
+</div>
+
+<!-- ========== 底部 Tab 栏（优先级三·2） ========== -->
+<nav class="tabbar" id="tabbar">
+  <button class="active" data-tab="expense"><span class="ico">💰</span>费用</button>
+  <button data-tab="duty"><span class="ico">📅</span>排班</button>
+  <button data-tab="goods"><span class="ico">📦</span>物品</button>
+  <button data-tab="rules"><span class="ico">📜</span>公约</button>
+</nav>
+
+<div id="toast"></div>
+
+<script>
+"use strict";
+/* ============================================================
+   一、主题（深色模式）
+   ============================================================ */
+const TKEY = 'roommate_hub_theme';
+function applyTheme(t){
+  document.documentElement.setAttribute('data-theme', t === 'dark' ? 'dark' : 'light');
+  // 注意：初始化时 $ 尚未定义，故此处直接用 getElementById，避免 TDZ 报错
+  const b = document.getElementById('themeBtn');
+  if (b) b.textContent = t === 'dark' ? '☀️' : '🌙';
+}
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+  const next = cur === 'dark' ? 'light' : 'dark';
+  try { localStorage.setItem(TKEY, next); } catch(e){}
+  applyTheme(next);
+  toast(next === 'dark' ? '🌙 已切换深色模式' : '☀️ 已切换浅色模式');
+}
+(function initTheme(){
+  let saved = null;
+  try { saved = localStorage.getItem(TKEY); } catch(e){}
+  if (!saved && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) saved = 'dark';
+  applyTheme(saved || 'light');
+})();
+
+/* ============================================================
+   二、数据层（localStorage 持久化）
+   ============================================================ */
+const KEY = 'roommate_hub_v4';
+const DEFAULT = {
+  roommates: ['我', '小李', '阿杰'],
+  expenses: [],
+  duty: { start: '', mode: '1', done: {} },
+  goods: [
+    { id: 1, name: '抽纸', qty: 3, min: 2 },
+    { id: 2, name: '洗洁精', qty: 1, min: 1 }
+  ],
+  rules: ['晚上 11 点后保持安静', '公共区域轮流打扫，垃圾当天扔', '公共物品用完记得补充']
+};
+let S;
+try { S = JSON.parse(localStorage.getItem(KEY)) || JSON.parse(JSON.stringify(DEFAULT)); }
+catch(e){ S = JSON.parse(JSON.stringify(DEFAULT)); }
+// —— 结构兜底（兼容旧数据 / 缺失字段）——
+S.roommates = (Array.isArray(S.roommates) && S.roommates.length) ? S.roommates : DEFAULT.roommates.slice();
+S.expenses  = Array.isArray(S.expenses) ? S.expenses : [];
+S.goods     = Array.isArray(S.goods)    ? S.goods    : DEFAULT.goods.slice();
+S.rules     = Array.isArray(S.rules)    ? S.rules    : DEFAULT.rules.slice();
+S.duty      = (S.duty && typeof S.duty === 'object') ? S.duty : { start:'', mode:'1' };
+S.duty.done = (S.duty.done && typeof S.duty.done === 'object') ? S.duty.done : {};
+
+const save  = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} };
+const $     = id => document.getElementById(id);
+const uid   = () => Date.now() + Math.floor(Math.random() * 1000);
+const fmt   = n => Number(n || 0).toLocaleString('zh-CN', { minimumFractionDigits:2, maximumFractionDigits:2 });
+const esc   = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const dayKey = d => { d = d || new Date(); return d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate(); };
+
+/* ============================================================
+   三、通用 UI：Toast / Tab 切换 / 加载完成
+   ============================================================ */
+let toastTimer = null;
+function toast(msg){
+  const t = $('toast'); if (!t) return;
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 1900);
+}
+/** 底部 Tab 切换（四大模块） */
+function switchTab(tab){
+  document.querySelectorAll('.tabbar button').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  const el = $('view-' + tab);
+  if (el) el.classList.add('active');
+  window.scrollTo({ top:0, behavior:'smooth' });
+  renderOverview();
+}
+document.querySelectorAll('.tabbar button').forEach(b => {
+  b.addEventListener('click', () => switchTab(b.dataset.tab));
+});
+
+/* ============================================================
+   四、室友管理（优先级二·1：弹窗 + 实时联动）
+   ============================================================ */
+function openRoommateModal(){
+  $('roommateModal').classList.add('show');
+  setTimeout(() => { const i = $('rmInput'); if (i) i.focus(); }, 220);
+}
+function closeRoommateModal(){ $('roommateModal').classList.remove('show'); }
+function addRoommate(){
+  const el = $('rmInput');
+  const name = el.value.trim();
+  if (!name) return alert('请输入室友名字');
+  if (S.roommates.includes(name)) return alert('这位室友已经在名单里了');
+  S.roommates.push(name);
+  el.value = '';
+  save();
+  renderAll();                 // ★ 实时刷新：下拉、勾选、值日、概览
+  toast('✔ 已添加室友「' + name + '」');
+}
+function delRoommate(i){
+  const name = S.roommates[i];
+  if (S.roommates.length <= 1) return alert('至少保留一位室友');
+  if (!confirm('删除室友「' + name + '」？TA 相关的垫付/分摊记录会一并清理。')) return;
+  S.roommates.splice(i, 1);
+  // 清理脏数据，避免结算/分摊出错
+  S.expenses = S.expenses
+    .map(e => ({ ...e, parts: (e.parts || []).filter(p => p !== name) }))
+    .filter(e => e.payer !== name && e.parts.length > 0);
+  save();
+  renderAll();
+  toast('已删除室友「' + name + '」');
+}
+function renderRoommates(){
+  // 弹窗内的室友 chips
+  $('rmChips').innerHTML = S.roommates.map((r, i) =>
+    `<span class="chip">${esc(r)}<button title="删除" onclick="delRoommate(${i})">×</button></span>`
+  ).join('');
+  $('rmTip').textContent = '共 ' + S.roommates.length + ' 位室友：' + S.roommates.join('、');
+
+  // ★ 垫付人下拉（保留已选中的项）
+  const prev = $('exPayer').value;
+  $('exPayer').innerHTML = S.roommates.map(r => `<option>${esc(r)}</option>`).join('');
+  if (S.roommates.includes(prev)) $('exPayer').value = prev;
+
+  // ★ 参与分摊勾选
+  $('exParts').innerHTML = S.roommates.map(r =>
+    `<label class="on" onclick="this.classList.toggle('on')"><input type="checkbox" value="${esc(r)}" checked>${esc(r)}</label>`
+  ).join('');
+}
+
+/* ============================================================
+   五、费用：添加 / 删除 / 净额 / 结算 / 构成图
+   ============================================================ */
+function addExpense(){
+  const name   = $('exName').value.trim();
+  const amount = parseFloat($('exAmount').value);
+  const payer  = $('exPayer').value;
+  const parts  = [...$('exParts').querySelectorAll('input:checked')].map(i => i.value);
+  if (!name) return alert('请填写费用项目');
+  if (!(amount > 0)) return alert('请输入正确的金额');
+  if (!parts.length) return alert('请至少选择一个参与分摊的人');
+
+  S.expenses.push({ id: uid(), name, amount, payer, parts, date: new Date().toLocaleDateString('zh-CN'), ts: Date.now() });
+  save();
+  $('exName').value = ''; $('exAmount').value = ''; $('aiOut').innerHTML = '';
+  renderAll();
+  toast('✔ 已添加「' + name + '」¥' + fmt(amount));
+}
+function delExpense(id){
+  const e = S.expenses.find(x => x.id === id);
+  S.expenses = S.expenses.filter(x => x.id !== id);
+  save(); renderAll();
+  toast('已删除' + (e ? '「' + e.name + '」' : '费用记录'));
+}
+/** 计算每人净额：正 = 应收，负 = 应付 */
+function calcNet(){
+  const net = {}; S.roommates.forEach(r => net[r] = 0);
+  let total = 0;
+  S.expenses.forEach(e => {
+    const parts = (e.parts || []).filter(p => Object.prototype.hasOwnProperty.call(net, p));
+    if (!Object.prototype.hasOwnProperty.call(net, e.payer) || !parts.length) return;  // 忽略脏数据
+    total += e.amount;
+    net[e.payer] += e.amount;
+    parts.forEach(p => net[p] -= e.amount / parts.length);
+  });
+  return { net, total };
+}
+/** 生成最少笔数的转账建议（贪心） */
+function buildSettleTip(net){
+  const debtors   = Object.entries(net).filter(([,v]) => v < -0.005).map(([k,v]) => [k, -v]).sort((a,b) => b[1]-a[1]);
+  const creditors = Object.entries(net).filter(([,v]) => v >  0.005).map(([k,v]) => [k,  v]).sort((a,b) => b[1]-a[1]);
+  const tips = []; let i = 0, j = 0;
+  while (i < debtors.length && j < creditors.length){
+    const amt = Math.min(debtors[i][1], creditors[j][1]);
+    if (amt > 0.01) tips.push({ from: debtors[i][0], to: creditors[j][0], amt });
+    debtors[i][1] -= amt; creditors[j][1] -= amt;
+    if (debtors[i][1] <= 0.005) i++;
+    if (creditors[j][1] <= 0.005) j++;
+  }
+  return tips;
+}
+const BAR_COLORS = ['#4f6df5','#7c3aed','#F59E0B','#10B981','#EF4444','#EC4899','#14B8A6','#8B5CF6'];
+
+function renderExpense(){
+  const { net, total } = calcNet();
+  $('exCount').textContent = S.expenses.length ? '（共 ' + S.expenses.length + ' 笔）' : '';
+
+  // 记录列表 + 空状态
+  if (S.expenses.length){
+    $('exEmpty').innerHTML = '';
+    $('exList').innerHTML = S.expenses.slice().reverse().map(e => `
+      <li>
+        <div><b>${esc(e.name)}</b> ¥${fmt(e.amount)}
+          <div class="muted">${esc(e.payer)} 垫付 · ${(e.parts || []).length} 人均摊 · ${esc(e.date || '')}</div>
+        </div>
+        <div class="li-actions"><button class="btn sm danger" onclick="delExpense(${e.id})">删除</button></div>
+      </li>`).join('');
+  } else {
+    $('exList').innerHTML = '';
+    $('exEmpty').innerHTML = `
+      <div class="empty">
+        <span class="emoji">🧾</span>
+        还没有费用记录
+        <div style="margin-top:12px"><button class="btn ghost" onclick="genSampleData()">✨ 一键生成示例数据</button></div>
+      </div>`;
+  }
+
+  $('exStat').innerHTML = `
+    <div class="box"><b>¥${fmt(total)}</b><span>费用总计</span></div>
+    <div class="box"><b>${S.expenses.length}</b><span>费用笔数</span></div>
+    <div class="box"><b>¥${fmt(S.roommates.length ? total / S.roommates.length : 0)}</b><span>人均消费</span></div>`;
+
+  // 结算表
+  let rows = '<tr><th>室友</th><th>垫付</th><th>应分担</th><th>净额</th></tr>';
+  S.roommates.forEach(r => {
+    const paid = S.expenses.filter(e => e.payer === r).reduce((s, e) => s + e.amount, 0);
+    let share = 0;
+    S.expenses.forEach(e => {
+      const parts = (e.parts || []).filter(p => Object.prototype.hasOwnProperty.call(net, p));
+      if (parts.includes(r) && Object.prototype.hasOwnProperty.call(net, e.payer)) share += e.amount / parts.length;
+    });
+    const v = net[r];
+    const cls = v > 0.005 ? 'ok' : (v < -0.005 ? 'bad' : '');
+    const txt = v > 0.005 ? ('应收 ¥' + fmt(v)) : (v < -0.005 ? ('应付 ¥' + fmt(-v)) : '已结清');
+    rows += `<tr><td>${esc(r)}</td><td>¥${fmt(paid)}</td><td>¥${fmt(share)}</td><td><span class="tag ${cls}">${txt}</span></td></tr>`;
+  });
+  $('exTable').innerHTML = rows;
+
+  // 转账建议
+  const tips = buildSettleTip(net);
+  const settleEl = $('exSettle');
+  settleEl.className = tips.length ? 'tip' : 'tip good';
+  settleEl.innerHTML = tips.length
+    ? '💡 <b>结算建议</b><br>' + tips.map(t => `【${esc(t.from)}】转给【${esc(t.to)}】¥${fmt(t.amt)}`).join('<br>')
+    : '🎉 大家都已结清，无需转账～';
+
+  renderChart();
+}
+/** 费用构成可视化（纯 CSS 条形图） */
+function renderChart(){
+  const map = {};
+  S.expenses.forEach(e => { map[e.name] = (map[e.name] || 0) + e.amount; });
+  const arr = Object.entries(map).sort((a, b) => b[1] - a[1]);
+  const sum = arr.reduce((s, [, v]) => s + v, 0);
+  if (!arr.length){
+    $('exChart').innerHTML = '<div class="empty"><span class="emoji">📊</span>暂无费用数据，记一笔就能看到构成啦</div>';
+    return;
+  }
+  $('exChart').innerHTML = arr.map(([k, v], i) => {
+    const pct = sum ? (v / sum * 100) : 0;
+    return `<div class="bar-row">
+      <div class="bar-label" title="${esc(k)}">${esc(k)}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct.toFixed(1)}%;background:${BAR_COLORS[i % BAR_COLORS.length]}"></div></div>
+      <div class="bar-val">¥${fmt(v)} · ${pct.toFixed(0)}%</div>
+    </div>`;
+  }).join('');
+}
+
+/* ============================================================
+   六、★ AI 一句话记账（优先级一：正则模拟 AI 解析）
+   ============================================================ */
+// 常见费用关键词库（命中即作为项目名）
+const GENRE_KEYS = ['水电费','水电煤','水费','电费','燃气费','燃气','网费','宽带','房租','物业费','物业',
+  '买菜','菜钱','外卖','日用品','纸巾','抽纸','洗洁精','清洁用品','垃圾袋','维修','保洁','取暖费',
+  '停车费','电视费','水果','零食','快递费','宠物用品'];
+
+const AI_EXAMPLES = [
+  '今天买菜花了120块，我垫的，4个人平摊',
+  '小李交了200电费，三个人分',
+  '房租4500，阿杰垫付，所有人平摊'
+];
+
+/**
+ * 核心：用正则从自然语言中解析记账要素
+ * 返回 { name, amount, payer, parts, count, ok }
+ */
+function parseExpenseText(text){
+  const t = String(text || '').trim();
+  const res = { name:'', amount:null, payer:'', parts:[], count:null, ok:false };
+  if (!t) return res;
+
+  /* ---------- 1. 金额：优先「数字+块/元」，其次「花了/付了…数字」，最后取首个非人数数字 ---------- */
+  let m = t.match(/(\d+(?:\.\d+)?)\s*(?:块钱|块|元钱|元|人民币|rmb|￥|¥)/i);
+  if (!m) m = t.match(/(?:花了|用了|付了|交了|支付|总共|一共|合计|消费|花销)\D{0,4}?(\d+(?:\.\d+)?)/);
+  if (!m){
+    // 兜底：取第一个「后面不是 个/位/人」的数字，避免把“4个人”当金额
+    const nums = [...t.matchAll(/(\d+(?:\.\d+)?)/g)]
+      .filter(x => !/^\s*(?:个|位|人)/.test(t.slice(x.index + x[0].length, x.index + x[0].length + 2)));
+    if (nums.length) m = [null, nums[0][1]];
+  }
+  if (m) res.amount = parseFloat(m[1]);
+
+  /* ---------- 2. 项目名：优先命中关键词库，否则提取「动词前的名词」 ---------- */
+  for (const k of GENRE_KEYS){
+    if (t.includes(k)) { res.name = k; break; }
+  }
+  if (!res.name){
+    const m2 = t.match(/(?:今天|昨天|刚刚|刚才|晚上|中午|早上|这个月|上周)?\s*([\u4e00-\u9fa5A-Za-z]{2,8}?)\s*(?:花了|用了|付了|交了|支付|消费|一共|总共|的钱)/);
+    if (m2) res.name = m2[1].replace(/^(今天|昨天|刚刚|刚才|晚上|中午|早上|这个月|上周)/, '');
+  }
+  if (!res.name) res.name = '公共费用';
+
+  /* ---------- 3. 参与人数：「4个人 / 三个人 / 5人均摊」 ---------- */
+  const CN_NUM = { 一:1, 两:2, 二:2, 三:3, 四:4, 五:5, 六:6, 七:7, 八:8, 九:9, 十:10 };
+  let mc = t.match(/(\d+)\s*(?:个)?\s*人\s*(?:平摊|均摊|分摊|均分|AA|aa|一起|分)?/);
+  if (!mc) mc = t.match(/([一二两三四五六七八九十])\s*(?:个)?\s*人\s*(?:平摊|均摊|分摊|均分|AA|aa|一起|分)?/);
+  if (mc){
+    const raw = mc[1];
+    res.count = /^\d+$/.test(raw) ? parseInt(raw) : (CN_NUM[raw] || null);
+  }
+  const allFlag = /(所有人|大家|全部人|全部|都平摊|都分摊|我们几个)/.test(t);
+
+  /* ---------- 4. 垫付人：优先「XX垫的/付的/交的」，否则「我」 ---------- */
+  let payer = '';
+  const mp = t.match(/([\u4e00-\u9fa5A-Za-z]{1,6}?)\s*(?:垫的|垫付|垫了|先垫|付的|付了|先付|交的|交了|出的|请客)/);
+  if (mp){
+    const cand = mp[1].replace(/^(今天|昨天|刚刚|刚才|晚上|中午|早上|这个月|上周)/, '');
+    if (cand && S.roommates.includes(cand)) payer = cand;
+  }
+  if (!payer){ // 再尝试「室友名 + 垫/付/交」
+    const hit = S.roommates.find(r => new RegExp(r + '\\s*(?:垫|付|交|出)').test(t));
+    if (hit) payer = hit;
+  }
+  if (!payer && /我/.test(t)) payer = '我';
+  if (!payer) payer = S.roommates.includes('我') ? '我' : S.roommates[0];
+  if (!S.roommates.includes(payer)) payer = S.roommates[0];
+  res.payer = payer;
+
+  /* ---------- 5. 参与分摊的人：具体人名 > 人数 > 默认全体 ---------- */
+  const mentioned = S.roommates.filter(r => r !== payer && t.includes(r));  // 排除垫付人，避免“我垫的”被误判
+  let parts = [];
+  if (mentioned.length) parts = S.roommates.filter(r => mentioned.includes(r) || r === payer);
+  else if (res.count) parts = S.roommates.slice(0, Math.min(res.count, S.roommates.length));
+  else parts = S.roommates.slice();                 // 含 allFlag / 默认情况
+  if (!parts.includes(payer)) parts.push(payer);
+  res.parts = parts;
+  res.count = parts.length;                          // 实际参与人数
+  res.ok = !!(res.amount && res.name);
+  return res;
+}
+function useExample(i){ $('aiInput').value = AI_EXAMPLES[i] || AI_EXAMPLES[0]; $('aiInput').focus(); }
+function clearAI(){ $('aiInput').value = ''; $('aiOut').innerHTML = ''; }
+
+/** 触发“AI 解析”（模拟思考过程 → 展示预览 → 自动填表） */
+function runAI(){
+  const text = $('aiInput').value.trim();
+  const out  = $('aiOut');
+  if (!text){
+    out.innerHTML = '<div class="tip warn">请先输入一句话，例如：今天买菜花了120块，我垫的，4个人平摊</div>';
+    return;
+  }
+  // 模拟 AI 思考动画
+  out.innerHTML = '<div class="ai-loading"><span class="dot"></span><span class="dot"></span><span class="dot"></span> AI 正在解析这句话…</div>';
+
+  setTimeout(() => {
+    const r = parseExpenseText(text);
+    if (!r.ok){
+      out.innerHTML = '<div class="tip warn">😅 没能识别出金额或项目，换个说法试试，例如：<b>小李交了200电费，三个人分</b></div>';
+      return;
+    }
+    // ★ 自动填入手动记账表单
+    $('exName').value   = r.name;
+    $('exAmount').value = r.amount;
+    if (S.roommates.includes(r.payer)) $('exPayer').value = r.payer;
+    [...$('exParts').querySelectorAll('label')].forEach(lb => {
+      const cb = lb.querySelector('input');
+      const on = r.parts.includes(cb.value);
+      cb.checked = on;
+      lb.classList.toggle('on', on);
+    });
+    // ★ 解析预览（明确标注 AI 智能解析结果）
+    out.innerHTML = `
+      <div class="ai-result">
+        <div class="ai-head">✨ AI 智能解析结果（已自动填入下方表单，确认后提交）</div>
+        <div class="ai-grid">
+          <div>📌 项目：<b>${esc(r.name)}</b></div>
+          <div>💰 金额：<b>¥${fmt(r.amount)}</b></div>
+          <div>🙋 垫付人：<b>${esc(r.payer)}</b></div>
+          <div>👥 参与人数：<b>${r.count} 人</b>（${r.parts.map(esc).join('、')}）</div>
+        </div>
+      </div>`;
+    toast('✨ AI 已解析，请确认表单后提交');
+  }, 620);
+}
+
+/* ============================================================
+   七、值日排班（含视觉强化 + 打卡）
+   ============================================================ */
+function dutyInfo(){
+  const start = new Date(S.duty.start || new Date().toISOString().slice(0, 10));
+  start.setHours(0, 0, 0, 0);
+  const step = parseInt(S.duty.mode || '1') || 1;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const pick = i => S.roommates[((i % S.roommates.length) + S.roommates.length) % S.roommates.length];
+  const idxToday = Math.floor(Math.round((today - start) / 86400000) / step);
+  return { start, step, today, pick, idxToday, todayName: pick(idxToday) };
+}
+function saveDuty(){
+  S.duty.start = $('dutyStart').value || new Date().toISOString().slice(0, 10);
+  S.duty.mode  = $('dutyMode').value;
+  save(); renderDuty(); renderOverview();
+  toast('✔ 排班已更新（' + (S.duty.mode === '7' ? '每周' : '每天') + '轮换）');
+}
+function toggleDutyDone(){
+  const k = dayKey();
+  if (S.duty.done[k]) delete S.duty.done[k];
+  else S.duty.done[k] = dutyInfo().todayName;
+  save(); renderDuty(); renderOverview();
+  toast(S.duty.done[k] ? '✔ 今日清洁已完成，辛苦啦！' : '已取消打卡');
+}
+function renderDuty(){
+  if (!S.roommates.length){
+    $('dutyTable').innerHTML = '';
+    $('dutyEmpty').innerHTML = '<div class="empty"><span class="emoji">🧹</span>还没有室友，先去添加吧</div>';
+    return;
+  }
+  $('dutyStart').value = S.duty.start || new Date().toISOString().slice(0, 10);
+  $('dutyMode').value  = S.duty.mode || '1';
+
+  const { start, step, today, pick, idxToday, todayName } = dutyInfo();
+
+  // ★ 视觉强化：大徽章 + 圆形头像 + 名字 + 进度条
+  $('dutyAvatar').textContent = todayName.slice(0, 1);
+  $('dutyName').textContent   = todayName;
+  $('dutySub').textContent    = (step === 7 ? '本周' : '今日') + '轮到 TA 打扫公共区域';
+
+  // 本周打卡进度（最近 7 天）
+  let doneDays = 0;
+  for (let d = 0; d < 7; d++){
+    const k = dayKey(new Date(today.getTime() - d * 86400000));
+    if (S.duty.done[k]) doneDays++;
+  }
+  const pct = Math.round(doneDays / 7 * 100);
+  $('dutyPg').style.width = pct + '%';
+  $('dutyPgText').textContent = `本周清洁进度 ${doneDays} / 7 天（${pct}%）`;
+
+  // 打卡状态
+  const isDone = !!S.duty.done[dayKey()];
+  $('dutyDone').classList.toggle('done', isDone);
+  $('dutyDoneText').innerHTML = isDone
+    ? `✅ 今日清洁已完成（${esc(S.duty.done[dayKey()])} 打卡）`
+    : '⏳ 今日清洁尚未打卡';
+  $('dutyDoneBtn').textContent = isDone ? '取消打卡' : '标记已完成';
+  $('dutyDoneBtn').className   = isDone ? 'btn sm ghost' : 'btn sm';
+
+  // 未来 7 天排班表
+  $('dutyEmpty').innerHTML = '';
+  let rows = '<tr><th>日期</th><th>值日室友</th></tr>';
+  for (let d = 0; d < 7; d++){
+    const dt = new Date(today.getTime() + d * 86400000);
+    const i2 = Math.floor(Math.round((dt - start) / 86400000) / step);
+    const kk = dayKey(dt);
+    rows += `<tr class="${d === 0 ? 'today' : ''}">
+      <td>${dt.toLocaleDateString('zh-CN', { month:'2-digit', day:'2-digit' })}${d === 0 ? '（今天）' : ''}</td>
+      <td>${esc(pick(i2))}${S.duty.done[kk] ? ' ✅' : ''}</td></tr>`;
+  }
+  $('dutyTable').innerHTML = rows;
+}
+
+/* ============================================================
+   八、公共物品（含空状态 + 示例数据）
+   ============================================================ */
+function addGoods(){
+  const name = $('gdName').value.trim();
+  if (!name) return alert('请填写物品名称');
+  S.goods.push({ id: uid(), name, qty: parseFloat($('gdQty').value) || 0, min: parseFloat($('gdMin').value) || 1 });
+  save(); $('gdName').value = ''; renderAll();
+  toast('✔ 已登记「' + name + '」');
+}
+function chgGoods(id, delta){
+  const g = S.goods.find(x => x.id === id); if (!g) return;
+  g.qty = Math.max(0, (+g.qty) + delta);
+  save(); renderAll();
+}
+function delGoods(id){
+  const g = S.goods.find(x => x.id === id);
+  S.goods = S.goods.filter(x => x.id !== id);
+  save(); renderAll();
+  toast('已删除' + (g ? '「' + g.name + '」' : '物品'));
+}
+function renderGoods(){
+  if (S.goods.length){
+    $('gdEmpty').innerHTML = '';
+    $('gdList').innerHTML = S.goods.map(g => {
+      const low = (+g.qty) <= (+g.min);
+      return `<li>
+        <div><b>${esc(g.name)}</b> <span class="tag ${low ? 'bad' : 'ok'}">${low ? '⚠ 需补充' : '充足'}</span>
+          <div class="muted">当前 ${g.qty} · 警戒线 ${g.min}</div></div>
+        <div class="li-actions">
+          <button class="btn sm ghost" onclick="chgGoods(${g.id},-1)">−1</button>
+          <button class="btn sm ghost" onclick="chgGoods(${g.id},1)">+1</button>
+          <button class="btn sm danger" onclick="delGoods(${g.id})">删</button>
+        </div></li>`;
+    }).join('');
+  } else {
+    $('gdList').innerHTML = '';
+    $('gdEmpty').innerHTML = `
+      <div class="empty">
+        <span class="emoji">📦</span>
+        还没有登记公共物品
+        <div style="margin-top:12px"><button class="btn ghost" onclick="genSampleData()">✨ 一键生成示例数据</button></div>
+      </div>`;
+  }
+}
+
+/* ============================================================
+   九、室友公约
+   ============================================================ */
+function addRule(){
+  const t = $('ruleText').value.trim();
+  if (!t) return alert('请输入公约内容');
+  S.rules.push(t); save(); $('ruleText').value = ''; renderRules();
+  toast('✔ 已添加公约条款');
+}
+function delRule(i){ S.rules.splice(i, 1); save(); renderRules(); toast('已删除公约条款'); }
+function renderRules(){
+  if (S.rules.length){
+    $('ruleEmpty').innerHTML = '';
+    $('ruleList').innerHTML = S.rules.map((r, i) =>
+      `<li><div>${i + 1}. ${esc(r)}</div>
+        <div class="li-actions"><button class="btn sm danger" onclick="delRule(${i})">删除</button></div></li>`).join('');
+  } else {
+    $('ruleList').innerHTML = '';
+    $('ruleEmpty').innerHTML = `
+      <div class="empty">
+        <span class="emoji">📜</span>
+        还没有公约条款
+        <div style="margin-top:12px"><button class="btn ghost" onclick="genSampleData()">✨ 一键生成示例数据</button></div>
+      </div>`;
+  }
+}
+
+/* ============================================================
+   十、概览
+   ============================================================ */
+function renderOverview(){
+  const now = new Date(), ym = now.getFullYear() + '-' + (now.getMonth() + 1);
+  let monthTotal = 0;
+  S.expenses.forEach(e => {
+    const d = e.ts ? new Date(e.ts) : null;
+    if (d && (d.getFullYear() + '-' + (d.getMonth() + 1)) === ym) monthTotal += e.amount;
+  });
+  const lowGoods = S.goods.filter(g => (+g.qty) <= (+g.min)).length;
+  $('ovMonth').textContent = '¥' + fmt(monthTotal);
+  $('ovDuty').textContent  = S.roommates.length ? dutyInfo().todayName : '—';
+  $('ovGoods').textContent = lowGoods;
+  $('ovRooms').textContent = S.roommates.length;
+}
+
+/* ============================================================
+   十一、示例数据（优先级二·2：一键填满产品形态）
+   ============================================================ */
+function genSampleData(){
+  if (!confirm('生成一组示例数据？会覆盖当前的室友、费用、物品与公约。')) return;
+  S.roommates = ['我', '小李', '阿杰', '小美'];
+  S.expenses = [
+    { id: uid(),     name:'房租',   amount:4500, payer:'我',   parts:['我','小李','阿杰','小美'], date:new Date().toLocaleDateString('zh-CN'), ts:Date.now() },
+    { id: uid() + 1, name:'水电费', amount:320,  payer:'小李', parts:['我','小李','阿杰','小美'], date:new Date().toLocaleDateString('zh-CN'), ts:Date.now() - 86400000 },
+    { id: uid() + 2, name:'买菜',   amount:180,  payer:'阿杰', parts:['我','小李','阿杰'],        date:new Date().toLocaleDateString('zh-CN'), ts:Date.now() - 172800000 },
+    { id: uid() + 3, name:'网费',   amount:120,  payer:'我',   parts:['我','小李','阿杰','小美'], date:new Date().toLocaleDateString('zh-CN'), ts:Date.now() - 259200000 },
+    { id: uid() + 4, name:'日用品', amount:86,   payer:'小美', parts:['我','小李','小美'],        date:new Date().toLocaleDateString('zh-CN'), ts:Date.now() - 345600000 }
+  ];
+  S.goods = [
+    { id: uid() + 10, name:'抽纸',   qty:2, min:3 },
+    { id: uid() + 11, name:'洗洁精', qty:1, min:1 },
+    { id: uid() + 12, name:'垃圾袋', qty:5, min:2 },
+    { id: uid() + 13, name:'洗手液', qty:0, min:2 }
+  ];
+  S.rules = [
+    '晚上 11 点后保持安静，戴耳机看视频',
+    '公共区域轮流打扫，垃圾当天扔',
+    '公共物品用完记得补充，谁买谁记账',
+    '带朋友回来提前在群里说一声'
+  ];
+  S.duty = { start: new Date().toISOString().slice(0, 10), mode:'1', done: {} };
+  save(); renderAll();
+  toast('✨ 示例数据已生成，切换 Tab 看看效果吧');
+}
+
+/* ============================================================
+   十二、数据管理：复制账单 / 备份 / 恢复 / 清空
+   ============================================================ */
+function buildBill(){
+  const { net, total } = calcNet();
+  const L = [];
+  L.push('🏠 合租生活管家 · 账单');
+  L.push('日期：' + new Date().toLocaleDateString('zh-CN'));
+  L.push('室友：' + S.roommates.join('、'));
+  L.push('');
+  if (S.expenses.length){
+    L.push('【费用明细】');
+    S.expenses.forEach((e, i) => L.push(`${i + 1}. ${e.name} ¥${fmt(e.amount)}（${e.payer} 垫付，${(e.parts || []).length} 人均摊）`));
+    L.push('合计：¥' + fmt(total) + '　人均：¥' + fmt(S.roommates.length ? total / S.roommates.length : 0));
+  } else L.push('【费用明细】暂无费用记录');
+  L.push('');
+  L.push('【个人净额】');
+  S.roommates.forEach(r => {
+    const v = net[r];
+    L.push('· ' + r + '：' + (v > 0.005 ? ('应收 ¥' + fmt(v)) : (v < -0.005 ? ('应付 ¥' + fmt(-v)) : '已结清')));
+  });
+  const tips = buildSettleTip(net);
+  L.push('');
+  L.push('【结算建议】');
+  L.push(tips.length ? tips.map(t => `${t.from} → ${t.to}：¥${fmt(t.amt)}`).join('\n') : '大家都已结清 🎉');
+  return L.join('\n');
+}
+async function copyBill(){
+  const text = buildBill();
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(text);
+    else throw new Error('no clipboard api');
+    toast('✔ 账单已复制，可直接粘贴到群里');
+  } catch(e){
+    // 兼容不支持 Clipboard API 的环境
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.left = '-9999px';
+    document.body.appendChild(ta); ta.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch(_){ ok = false; }
+    ta.remove();
+    if (ok) toast('✔ 账单已复制');
+    else alert('复制失败，请手动复制：\n\n' + text);
+  }
+}
+function exportData(){
+  try {
+    const blob = new Blob([JSON.stringify(S, null, 2)], { type:'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = '合租生活管家_备份_' + new Date().toISOString().slice(0, 10) + '.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+    toast('✔ 备份文件已下载');
+  } catch(e){ toast('❌ 备份失败：' + e.message); }
+}
+function importData(input){
+  const f = input.files && input.files[0]; if (!f) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const d = JSON.parse(ev.target.result);
+      if (!d || !Array.isArray(d.roommates) || !d.roommates.length) throw new Error('格式不正确');
+      S = Object.assign({}, JSON.parse(JSON.stringify(DEFAULT)), d);
+      S.duty = (S.duty && typeof S.duty === 'object') ? S.duty : { start:'', mode:'1' };
+      S.duty.done = (S.duty.done && typeof S.duty.done === 'object') ? S.duty.done : {};
+      save(); renderAll(); toast('✔ 数据已恢复');
+    } catch(err){ toast('❌ 恢复失败：文件格式不正确'); }
+  };
+  reader.readAsText(f);
+  input.value = '';
+}
+function clearAll(){
+  if (!confirm('确定清空所有数据并恢复默认吗？此操作不可撤销（建议先「备份数据」）。')) return;
+  S = JSON.parse(JSON.stringify(DEFAULT));
+  save(); renderAll(); toast('✔ 已重置为默认数据');
+}
+
+/* ============================================================
+   十三、回车快捷提交
+   ============================================================ */
+function bindEnter(id, fn){
+  const el = $(id); if (!el) return;
+  el.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); fn(); }
+  });
+}
+
+/* ============================================================
+   十四、统一渲染 & 初始化
+   ============================================================ */
+function renderAll(){
+  renderRoommates();   // 室友（含下拉、勾选实时更新）
+  renderExpense();     // 费用 + 结算 + 构成图
+  renderDuty();        // 值日排班
+  renderGoods();       // 公共物品
+  renderRules();       // 公约
+  renderOverview();    // 概览
+}
+renderAll();
+// 回车快捷提交
+bindEnter('rmInput',  addRoommate);
+bindEnter('exName',   addExpense);
+bindEnter('exAmount', addExpense);
+bindEnter('gdName',   addGoods);
+bindEnter('ruleText', addRule);
+// ESC 关闭弹窗
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeRoommateModal(); });
+
+/* 页面就绪后隐藏加载遮罩（优先级四） */
+function hideLoader(){
+  const l = $('loader');
+  if (!l) return;
+  l.classList.add('hide');
+  setTimeout(() => { l.style.display = 'none'; }, 500);
+}
+if (document.readyState === 'complete') setTimeout(hideLoader, 260);
+else window.addEventListener('load', () => setTimeout(hideLoader, 260));
+// 兜底：无论加载事件是否触发，最多 2.5 秒后一定隐藏，避免遮罩卡死
+setTimeout(hideLoader, 2500);
+</script>
+</body>
+</html>
